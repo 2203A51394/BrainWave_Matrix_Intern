@@ -1,1 +1,97 @@
+import os
+
+# File to store user data
+USER_DATA_FILE = "user_data.txt"
+
+# Sample user data format: "1234,5000" (PIN,Balance)
+def load_user_data():
+    if not os.path.exists(USER_DATA_FILE):
+        with open(USER_DATA_FILE, "w") as f:
+            f.write("1234,5000\n")  # Default user (PIN: 1234, Balance: 5000)
+    with open(USER_DATA_FILE, "r") as f:
+        data = f.readlines()
+    users = {}
+    for line in data:
+        pin, balance = line.strip().split(",")
+        users[pin] = float(balance)
+    return users
+
+def save_user_data(users):
+    with open(USER_DATA_FILE, "w") as f:
+        for pin, balance in users.items():
+            f.write(f"{pin},{balance}\n")
+
+def authenticate(users):
+    attempts = 3
+    while attempts > 0:
+        pin = input("Enter your 4-digit PIN: ")
+        if pin in users:
+            return pin
+        else:
+            attempts -= 1
+            print(f"Incorrect PIN. Attempts left: {attempts}")
+    print("Too many incorrect attempts. Exiting.")
+    exit()
+
+def check_balance(pin, users):
+    print(f"Your current balance is: ₹{users[pin]:.2f}")
+
+def deposit_money(pin, users):
+    amount = float(input("Enter amount to deposit: ₹"))
+    if amount > 0:
+        users[pin] += amount
+        save_user_data(users)
+        print(f"₹{amount:.2f} deposited successfully!")
+    else:
+        print("Invalid deposit amount.")
+
+def withdraw_money(pin, users):
+    amount = float(input("Enter amount to withdraw: ₹"))
+    if 0 < amount <= users[pin]:
+        users[pin] -= amount
+        save_user_data(users)
+        print(f"₹{amount:.2f} withdrawn successfully!")
+    else:
+        print("Insufficient balance or invalid amount.")
+
+def change_pin(pin, users):
+    new_pin = input("Enter new 4-digit PIN: ")
+    if len(new_pin) == 4 and new_pin.isdigit():
+        users[new_pin] = users.pop(pin)
+        save_user_data(users)
+        print("PIN changed successfully!")
+        return new_pin
+    else:
+        print("Invalid PIN format.")
+    return pin
+
+def atm_interface():
+    users = load_user_data()
+    pin = authenticate(users)
+    
+    while True:
+        print("\n===== ATM MENU =====")
+        print("1. Check Balance")
+        print("2. Deposit Money")
+        print("3. Withdraw Money")
+        print("4. Change PIN")
+        print("5. Exit")
+        choice = input("Choose an option: ")
+        
+        if choice == "1":
+            check_balance(pin, users)
+        elif choice == "2":
+            deposit_money(pin, users)
+        elif choice == "3":
+            withdraw_money(pin, users)
+        elif choice == "4":
+            pin = change_pin(pin, users)
+        elif choice == "5":
+            print("Thank you for using our ATM. Goodbye!")
+            break
+        else:
+            print("Invalid option. Please try again.")
+
+if __name__ == "__main__":
+    atm_interface()
 
