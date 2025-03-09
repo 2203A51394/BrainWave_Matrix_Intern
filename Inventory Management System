@@ -1,0 +1,105 @@
+import sqlite3
+from tkinter import *
+from tkinter import messagebox
+
+conn = sqlite3.connect('inventory.db')
+cursor = conn.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password TEXT)''')
+cursor.execute('''CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT, quantity INTEGER, price REAL)''')
+conn.commit()
+
+
+def register_user():
+    username = user_entry.get()
+    password = pass_entry.get()
+    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    conn.commit()
+    messagebox.showinfo("Success", "User Registered!")
+
+def login_user():
+    username = user_entry.get()
+    password = pass_entry.get()
+    cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    user = cursor.fetchone()
+    if user:
+        messagebox.showinfo("Success", "Login Successful!")
+        open_inventory()
+    else:
+        messagebox.showerror("Error", "Invalid Credentials!")
+
+
+def add_product():
+    name = name_entry.get()
+    quantity = int(quantity_entry.get())
+    price = float(price_entry.get())
+    cursor.execute("INSERT INTO products (name, quantity, price) VALUES (?, ?, ?)", (name, quantity, price))
+    conn.commit()
+    messagebox.showinfo("Success", "Product Added!")
+    display_products()
+
+def delete_product():
+    product_id = delete_entry.get()
+    cursor.execute("SELECT * FROM products WHERE id=?", (product_id,))
+    product = cursor.fetchone()
+    if product:
+        cursor.execute("DELETE FROM products WHERE id=?", (product_id,))
+        conn.commit()
+        messagebox.showinfo("Success", "Product Deleted!")
+        display_products()
+    else:
+        messagebox.showerror("Error", "Enter Correct Product ID!")
+
+def display_products():
+    cursor.execute("SELECT * FROM products")
+    products = cursor.fetchall()
+    listbox.delete(0, END)
+    for product in products:
+        listbox.insert(END, f"ID: {product[0]}, Name: {product[1]}, Qty: {product[2]}, Price: {product[3]}")
+
+def open_inventory():
+    global name_entry, quantity_entry, price_entry, delete_entry, listbox
+    inv_window = Toplevel()
+    inv_window.title("Inventory Management")
+    inv_window.configure(bg='#f0f0f0')
+    
+    Label(inv_window, text="Product Name", bg='#f0f0f0', fg='black').grid(row=0, column=0)
+    name_entry = Entry(inv_window)
+    name_entry.grid(row=0, column=1)
+    
+    Label(inv_window, text="Quantity", bg='#f0f0f0', fg='black').grid(row=1, column=0)
+    quantity_entry = Entry(inv_window)
+    quantity_entry.grid(row=1, column=1)
+    
+    Label(inv_window, text="Price", bg='#f0f0f0', fg='black').grid(row=2, column=0)
+    price_entry = Entry(inv_window)
+    price_entry.grid(row=2, column=1)
+    
+    Button(inv_window, text="Add Product", command=add_product, bg='#4CAF50', fg='white').grid(row=3, column=1)
+    
+    Label(inv_window, text="Delete Product ID", bg='#f0f0f0', fg='black').grid(row=4, column=0)
+    delete_entry = Entry(inv_window)
+    delete_entry.grid(row=4, column=1)
+    Button(inv_window, text="Delete Product", command=delete_product, bg='#FF5733', fg='white').grid(row=5, column=1)
+    
+    listbox = Listbox(inv_window, width=50, bg='white', fg='black')
+    listbox.grid(row=6, columnspan=2)
+    display_products()
+
+root = Tk()
+root.title("Login Page")
+root.configure(bg='#dfe6e9')
+
+Label(root, text="Username", bg='#dfe6e9', fg='black').grid(row=0, column=0)
+user_entry = Entry(root)
+user_entry.grid(row=0, column=1)
+
+Label(root, text="Password", bg='#dfe6e9', fg='black').grid(row=1, column=0)
+pass_entry = Entry(root, show='*')
+pass_entry.grid(row=1, column=1)
+
+Button(root, text="Register", command=register_user, bg='#3498db', fg='white').grid(row=2, column=0)
+Button(root, text="Login", command=login_user, bg='#2ecc71', fg='white').grid(row=2, column=1)
+
+root.mainloop()
+
+conn.close()
